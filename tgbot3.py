@@ -1,6 +1,6 @@
 """
 Telegram Bot for Educational Profile Selection
-Версия для Railway с aiogram 3.x
+Версия для Railway с aiogram 3.x - РЕЖИМ POLLING (без вебхука)
 """
 
 import asyncio
@@ -20,19 +20,11 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.types import ReplyKeyboardRemove
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from aiohttp import web
 
 # ==================== КОНФИГУРАЦИЯ ====================
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 if not BOT_TOKEN:
     raise ValueError("BOT_TOKEN не установлен!")
-
-WEBHOOK_HOST = os.getenv("WEBHOOK_HOST", "")
-WEBHOOK_PATH = "/webhook"
-WEBAPP_HOST = "0.0.0.0"
-WEBAPP_PORT = int(os.getenv("PORT", 8080))
-WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}" if WEBHOOK_HOST else None
 
 # Путь к базе данных
 if os.environ.get('RAILWAY_VOLUME_MOUNT_PATH'):
@@ -41,6 +33,8 @@ else:
     DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bot_database.db')
 
 print(f"📁 БД: {DB_PATH}")
+print(f"🤖 Режим: POLLING (вебхук отключен)")
+print(f"✅ Бот запускается с токеном: {BOT_TOKEN[:10]}...")
 
 # ==================== КЛАССЫ ДАННЫХ ====================
 class ProfileType(Enum):
@@ -554,30 +548,10 @@ async def cmd_cancel(message: types.Message, state: FSMContext):
     await message.answer("❌ Отменено. /start для начала", reply_markup=ReplyKeyboardRemove())
 
 # ==================== ЗАПУСК ====================
-async def on_startup():
-    logging.basicConfig(level=logging.INFO)
-    if WEBHOOK_URL:
-        await bot.set_webhook(WEBHOOK_URL)
-        print(f"✅ Webhook: {WEBHOOK_URL}")
-    print(f"🤖 Бот запущен | БД: {DB_PATH}")
-
-async def on_shutdown():
-    if WEBHOOK_URL:
-        await bot.delete_webhook()
-    print("👋 Бот остановлен")
-
 async def main():
-    await on_startup()
-    if WEBHOOK_URL:
-        app = web.Application()
-        SimpleRequestHandler(dispatcher=dp, bot=bot).register(app, path=WEBHOOK_PATH)
-        setup_application(app, dp, bot=bot)
-        runner = web.AppRunner(app)
-        await runner.setup()
-        await web.TCPSite(runner, host=WEBAPP_HOST, port=WEBAPP_PORT).start()
-        await asyncio.Event().wait()
-    else:
-        await dp.start_polling(bot)
+    logging.basicConfig(level=logging.INFO)
+    print("🚀 Запуск бота в режиме POLLING...")
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
