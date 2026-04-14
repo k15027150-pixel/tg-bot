@@ -1,0 +1,9 @@
+{
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "python tgbot3.py",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}
